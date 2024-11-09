@@ -1,6 +1,7 @@
 package com.czarny.company_backend.domain.company.model;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -28,5 +29,6 @@ public class Team {
     private Department department;
 
     @OneToMany(fetch = FetchType.EAGER, mappedBy = "team")
+    @JsonManagedReference
     private List<Project> projects;
 }

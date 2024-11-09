@@ -7,6 +7,7 @@ import static org.springframework.http.ResponseEntity.noContent;
 import com.czarny.company_backend.domain.common.ItemNotFoundException;
 import com.czarny.company_backend.domain.company.model.Company;
 import com.czarny.company_backend.domain.company.model.Department;
+import com.czarny.company_backend.domain.company.model.Project;
 import com.czarny.company_backend.domain.company.model.Team;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -99,7 +100,7 @@ public class CompanyController {
         return ok(updatedDepartment);
     }
 
-    @GetMapping("/{companyId}/departments/{departmentId}/team")
+    @GetMapping("/{companyId}/departments/{departmentId}/teams")
     public ResponseEntity<List<Team>> getAllTeamsFromCompanyDepartment(
         @PathVariable Long companyId,
         @PathVariable Long departmentId
@@ -107,7 +108,7 @@ public class CompanyController {
         return ok(companyService.getTeamsFromCompanyDepartment(companyId, departmentId));
     }
 
-    @GetMapping("/{companyId}/departments/{departmentId}/team/{teamId}")
+    @GetMapping("/{companyId}/departments/{departmentId}/teams/{teamId}")
     public ResponseEntity<Team> getTeamFromCompanyDepartment(
         @PathVariable Long companyId,
         @PathVariable Long departmentId,
@@ -116,7 +117,7 @@ public class CompanyController {
         return ok(companyService.getTeamFromCompanyDepartment(companyId, departmentId, teamId));
     }
 
-    @PostMapping("/{companyId}/departments/{departmentId}/team")
+    @PostMapping("/{companyId}/departments/{departmentId}/teams")
     public ResponseEntity<Team> createTeamInCompanyDepartment(
         @PathVariable Long companyId,
         @PathVariable Long departmentId,
@@ -126,7 +127,7 @@ public class CompanyController {
         return status(HttpStatus.CREATED).body(newTeam);
     }
 
-    @PutMapping("/{companyId}/departments/{departmentId}/team/{teamId}")
+    @PutMapping("/{companyId}/departments/{departmentId}/teams/{teamId}")
     public ResponseEntity<Team> updateTeamInCompanyDepartment(
         @PathVariable Long companyId,
         @PathVariable Long departmentId,
@@ -137,7 +138,7 @@ public class CompanyController {
         return ok(updatedTeam);
     }
 
-    @DeleteMapping("/{companyId}/departments/{departmentId}/team/{teamId}")
+    @DeleteMapping("/{companyId}/departments/{departmentId}/teams/{teamId}")
     public ResponseEntity<Void> deleteTeamFromCompanyDepartment(
         @PathVariable Long companyId,
         @PathVariable Long departmentId,
@@ -146,4 +147,69 @@ public class CompanyController {
         companyService.deleteTeamForCompanyDepartment(companyId, departmentId, teamId);
         return noContent().build();
     }
+
+    @GetMapping("/{companyId}/departments/{departmentId}/teams/{teamId}/projects")
+    public ResponseEntity<List<Project>> getProjectsFromTeamFromCompanyDepartment(
+        @PathVariable Long companyId,
+        @PathVariable Long departmentId,
+        @PathVariable Long teamId
+    ) throws ItemNotFoundException {
+        return ok(companyService.getProjectsFromTeamFromCompanyDepartment(companyId, departmentId, teamId));
+    }
+
+    @GetMapping("/{companyId}/departments/{departmentId}/teams/{teamId}/projects/{projectId}")
+    public ResponseEntity<Project> getProjectFromTeamFromCompanyDepartment(
+        @PathVariable Long companyId,
+        @PathVariable Long departmentId,
+        @PathVariable Long teamId,
+        @PathVariable Long projectId
+    ) throws ItemNotFoundException {
+        return ok(companyService.getProjectFromTeamFromCompanyDepartment(companyId, departmentId, teamId, projectId));
+    }
+
+    @PostMapping("/{companyId}/departments/{departmentId}/teams/{teamId}/projects")
+    public ResponseEntity<Project> createProjectForTeamFromCompanyDepartment(
+        @PathVariable Long companyId,
+        @PathVariable Long departmentId,
+        @PathVariable Long teamId,
+        @RequestBody Project project
+    ) throws ItemNotFoundException {
+        Project newProject = companyService.createProjectForTeamFromCompanyDepartment(
+            companyId,
+            departmentId,
+            teamId,
+            project
+        );
+        return status(HttpStatus.CREATED).body(newProject);
+    }
+
+    @PutMapping("/{companyId}/departments/{departmentId}/teams/{teamId}/projects/{projectId}")
+    public ResponseEntity<Project> updateProjectForTeamFromCompanyDepartment(
+        @PathVariable Long companyId,
+        @PathVariable Long departmentId,
+        @PathVariable Long teamId,
+        @PathVariable Long projectId,
+        @RequestBody Project project
+    ) throws ItemNotFoundException {
+        Project updatedProject = companyService.updateProjectForTeamFromCompanyDepartment(
+            companyId,
+            departmentId,
+            teamId,
+            projectId,
+            project
+        );
+        return ok(updatedProject);
+    }
+
+    @DeleteMapping("/{companyId}/departments/{departmentId}/teams/{teamId}/projects/{projectId}")
+    public ResponseEntity<Project> updateProjectForTeamFromCompanyDepartment(
+            @PathVariable Long companyId,
+            @PathVariable Long departmentId,
+            @PathVariable Long teamId,
+            @PathVariable Long projectId
+    ) throws ItemNotFoundException {
+        companyService.removeProjectFromTeamFromCompanyDepartment(companyId, departmentId, teamId, projectId);
+        return noContent().build();
+    }
+
 }

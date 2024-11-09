@@ -5,6 +5,7 @@ import static java.lang.String.format;
 import com.czarny.company_backend.domain.common.ItemNotFoundException;
 import com.czarny.company_backend.domain.company.model.Company;
 import com.czarny.company_backend.domain.company.model.Department;
+import com.czarny.company_backend.domain.company.model.Project;
 import com.czarny.company_backend.domain.company.model.Team;
 import com.czarny.company_backend.domain.company.repository.*;
 import lombok.RequiredArgsConstructor;
@@ -120,11 +121,6 @@ public class CompanyService {
     public List<Team> getTeamsFromCompanyDepartment(Long companyId, Long departmentId) throws ItemNotFoundException {
         checkCompanyExists(companyId);
         checkDepartmentExistsInCompany(companyId, departmentId);
-        if (!departmentRepository.existsByCompany_IdAndId(companyId, departmentId)) {
-            throw new ItemNotFoundException(
-                format("Department with id: %d for company with id: %d not found", departmentId, companyId)
-            );
-        }
 
         return teamRepository.findAllByDepartment_Id(departmentId);
     }
@@ -192,6 +188,90 @@ public class CompanyService {
         teamRepository.delete(team);
     }
 
+    @Transactional(readOnly = true)
+    public List<Project> getProjectsFromTeamFromCompanyDepartment(
+            Long companyId,
+            Long departmentId,
+            Long teamId
+    ) throws ItemNotFoundException {
+        checkCompanyExists(companyId);
+        checkDepartmentExistsInCompany(companyId, departmentId);
+        checkTeamExistsInDepartment(departmentId, teamId);
+
+        return projectRepository.findAllByTeam_Id(teamId);
+    }
+
+    @Transactional(readOnly = true)
+    public Project getProjectFromTeamFromCompanyDepartment(
+        Long companyId,
+        Long departmentId,
+        Long teamId,
+        Long projectId
+    ) throws ItemNotFoundException {
+        checkCompanyExists(companyId);
+        checkDepartmentExistsInCompany(companyId, departmentId);
+        checkTeamExistsInDepartment(departmentId, teamId);
+        return projectRepository.findByIdAndTeam_Id(projectId, teamId).orElseThrow(
+            () -> new ItemNotFoundException(
+                format("Project with id %d for Team with id %d not found", projectId, teamId)
+            )
+        );
+    }
+
+    @Transactional
+    public Project createProjectForTeamFromCompanyDepartment(
+            Long companyId,
+            Long departmentId,
+            Long teamId,
+            Project project
+    ) throws ItemNotFoundException {
+        checkCompanyExists(companyId);
+        checkDepartmentExistsInCompany(companyId, departmentId);
+        Team team = teamRepository.findByDepartment_IdAndId(departmentId, teamId).orElseThrow(
+            () -> new ItemNotFoundException(
+                format("Team with id: %d from Department with id: %d not found", teamId, departmentId)
+            )
+        );
+        project.setTeam(team);
+        return projectRepository.save(project);
+    }
+
+    @Transactional
+    public Project updateProjectForTeamFromCompanyDepartment(
+        Long companyId,
+        Long departmentId,
+        Long teamId,
+        Long projectId,
+        Project project
+    ) throws ItemNotFoundException {
+        checkCompanyExists(companyId);
+        checkDepartmentExistsInCompany(companyId, departmentId);
+        checkTeamExistsInDepartment(departmentId, teamId);
+        checkProjectExistsInTeam(teamId, projectId);
+
+        project.setId(projectId);
+        return projectRepository.save(project);
+    }
+
+    @Transactional
+    public void removeProjectFromTeamFromCompanyDepartment(
+        Long companyId,
+        Long departmentId,
+        Long teamId,
+        Long projectId
+    ) throws ItemNotFoundException {
+        checkCompanyExists(companyId);
+        checkDepartmentExistsInCompany(companyId, departmentId);
+        checkTeamExistsInDepartment(departmentId, teamId);
+        Project project = projectRepository.findByIdAndTeam_Id (projectId, teamId).orElseThrow(
+            () -> new ItemNotFoundException(
+                format("Project with id: %d from Team with id: %d not found", projectId, teamId)
+            )
+        );
+
+        projectRepository.delete(project);
+    }
+
     private void checkCompanyExists(Long companyId) throws ItemNotFoundException {
         if (!companyRepository.existsById(companyId)) {
             throw new ItemNotFoundException(format("Company with id: %d not found", companyId));
@@ -213,6 +293,17 @@ public class CompanyService {
         if (!teamRepository.existsByDepartment_IdAndId(departmentId, teamId)) {
             throw new ItemNotFoundException(
                 format("Team with id: %d for Department with id: %d not found", teamId, departmentId)
+            );
+        }
+    }
+
+    private void checkProjectExistsInTeam(
+        Long teamId,
+        Long projectId
+    ) throws ItemNotFoundException {
+        if (!projectRepository.existsByIdAndTeam_id(projectId, teamId)) {
+            throw new ItemNotFoundException(
+                format("Project with id: %d for Team with id: %d not found", projectId, teamId)
             );
         }
     }
