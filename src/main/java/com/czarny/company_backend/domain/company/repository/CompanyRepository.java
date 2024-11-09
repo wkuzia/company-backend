@@ -1,4 +1,4 @@
-package com.czarny.company_backend.domain.company;
+package com.czarny.company_backend.domain.company.repository;
 
 import com.czarny.company_backend.domain.company.model.Company;
 import org.springframework.data.jpa.repository.JpaRepository;
