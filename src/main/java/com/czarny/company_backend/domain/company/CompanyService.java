@@ -5,15 +5,14 @@ import static java.lang.String.format;
 import com.czarny.company_backend.domain.common.ItemNotFoundException;
 import com.czarny.company_backend.domain.company.model.Company;
 import com.czarny.company_backend.domain.company.model.Department;
+import com.czarny.company_backend.domain.company.model.Team;
 import com.czarny.company_backend.domain.company.repository.*;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.Optional;
 
-@Slf4j
 @Service
 @RequiredArgsConstructor
 public class CompanyService {
@@ -44,22 +43,16 @@ public class CompanyService {
 
     @Transactional
     public void deleteCompany(Long id) throws ItemNotFoundException {
-        if (companyRepository.existsById(id)) {
-            companyRepository.deleteById(id);
-        } else {
-            throw new ItemNotFoundException(format("Company with id: %d not found", id));
-        }
+        checkCompanyExists(id);
+
+        companyRepository.deleteById(id);
     }
 
     @Transactional
     public Company updateCompany(Long id, Company company) throws ItemNotFoundException {
-        if (companyRepository.existsById(id)) {
-            company.setId(id);
-            companyRepository.save(company);
-            return company;
-        } else {
-            throw new ItemNotFoundException(format("Company with id: %d not found", id));
-        }
+        checkCompanyExists(id);
+        company.setId(id);
+        return companyRepository.save(company);
     }
 
     @Transactional(readOnly = true)
@@ -90,21 +83,20 @@ public class CompanyService {
                 () -> new ItemNotFoundException(format("Company with id: %d not found", companyId))
         );
         department.setCompany(company);
+
         return departmentRepository.save(department);
     }
 
     @Transactional
     public void deleteDepartmentFromCompany(Long departmentId, Long companyId) throws ItemNotFoundException {
-        if (companyRepository.existsById(companyId)) {
-            Department department = departmentRepository.findByIdAndCompanyId(departmentId, companyId).orElseThrow(
-                () -> new ItemNotFoundException(
-                    format("Department with id: %d for company with id: %d not found", departmentId, companyId)
-                )
-            );
-            departmentRepository.delete(department);
-        } else {
-            throw new ItemNotFoundException(format("Company with id: %d not found", companyId));
-        }
+        checkCompanyExists(companyId);
+
+        Department department = departmentRepository.findByIdAndCompanyId(departmentId, companyId).orElseThrow(
+            () -> new ItemNotFoundException(
+                format("Department with id: %d for company with id: %d not found", departmentId, companyId)
+            )
+        );
+        departmentRepository.delete(department);
     }
 
     @Transactional
@@ -113,16 +105,114 @@ public class CompanyService {
         Long companyId,
         Department department
     ) throws ItemNotFoundException {
-        if (departmentRepository.existsByCompany_IdAndId(departmentId, companyId)) {
-            Company company = companyRepository.findById(companyId).orElseThrow(
-                () -> new ItemNotFoundException(format("Company with id: %d not found", companyId))
-            );
-            department.setCompany(company);
-            department.setId(companyId);
-            return departmentRepository.save(department);
-        } else {
+        checkCompanyExists(companyId);
+
+        Company company = companyRepository.findById(companyId).orElseThrow(
+            () -> new ItemNotFoundException(format("Company with id: %d not found", companyId))
+        );
+        department.setCompany(company);
+        department.setId(departmentId);
+
+        return departmentRepository.save(department);
+    }
+
+    @Transactional(readOnly = true)
+    public List<Team> getTeamsFromCompanyDepartment(Long companyId, Long departmentId) throws ItemNotFoundException {
+        checkCompanyExists(companyId);
+        checkDepartmentExistsInCompany(companyId, departmentId);
+        if (!departmentRepository.existsByCompany_IdAndId(companyId, departmentId)) {
             throw new ItemNotFoundException(
                 format("Department with id: %d for company with id: %d not found", departmentId, companyId)
+            );
+        }
+
+        return teamRepository.findAllByDepartment_Id(departmentId);
+    }
+
+    @Transactional(readOnly = true)
+    public Team getTeamFromCompanyDepartment(
+        Long companyId,
+        Long departmentId,
+        Long teamId
+    ) throws ItemNotFoundException {
+        checkCompanyExists(companyId);
+        checkDepartmentExistsInCompany(companyId, departmentId);
+        Team teamFound = teamRepository.findByDepartment_IdAndId(departmentId, teamId).orElseThrow(
+            () -> new ItemNotFoundException(
+                format("Team with id %d in Department with id %d not found", teamId, departmentId)
+            )
+        );
+
+        return teamFound;
+    }
+
+    @Transactional
+    public Team createTeamForCompanyDepartment(
+        Long companyId,
+        Long departmentId,
+        Team team
+    ) throws ItemNotFoundException {
+        checkCompanyExists(companyId);
+        Department department = departmentRepository.findByIdAndCompanyId(departmentId, companyId).orElseThrow(
+            () -> new ItemNotFoundException(
+                format("Department with id: %d for company with id: %d not found", departmentId, companyId)
+            )
+        );
+        team.setDepartment(department);
+        return teamRepository.save(team);
+    }
+
+    @Transactional Team updateTeamInCompanyDepartment(
+        Long companyId,
+        Long departmentId,
+        Long teamId,
+        Team team
+    ) throws ItemNotFoundException {
+        checkCompanyExists(companyId);
+        checkDepartmentExistsInCompany(companyId, departmentId);
+        checkTeamExistsInDepartment(departmentId, teamId);
+
+        team.setId(teamId);
+        return teamRepository.save(team);
+    }
+
+    @Transactional
+    public void deleteTeamForCompanyDepartment(
+        Long companyId,
+        Long departmentId,
+        Long teamId
+    ) throws ItemNotFoundException {
+        checkCompanyExists(companyId);
+        checkDepartmentExistsInCompany(companyId, departmentId);
+        Team team = teamRepository.findByDepartment_IdAndId(departmentId, teamId).orElseThrow(
+            () -> new ItemNotFoundException(
+                format("Team with id: %d for department with id: %d not found", teamId, departmentId)
+            )
+        );
+        teamRepository.delete(team);
+    }
+
+    private void checkCompanyExists(Long companyId) throws ItemNotFoundException {
+        if (!companyRepository.existsById(companyId)) {
+            throw new ItemNotFoundException(format("Company with id: %d not found", companyId));
+        }
+    }
+
+    private void checkDepartmentExistsInCompany(Long companyId, Long departmentId) throws ItemNotFoundException {
+        if (!departmentRepository.existsByCompany_IdAndId(companyId, departmentId)) {
+            throw new ItemNotFoundException(
+                format("Department with id: %d for company with id: %d not found", departmentId, companyId)
+            );
+        }
+    }
+
+    private void checkTeamExistsInDepartment(
+        Long departmentId,
+        Long teamId
+    ) throws ItemNotFoundException {
+        if (!teamRepository.existsByDepartment_IdAndId(departmentId, teamId)) {
+            throw new ItemNotFoundException(
+                format("Team with id: %d for Department with id: %d not found", teamId, departmentId)
             );
         }
     }

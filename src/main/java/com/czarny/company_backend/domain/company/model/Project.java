@@ -24,6 +24,6 @@ public class Project {
     private Team team;
 
     @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "manger_id")
+    @JoinColumn(name = "manager_id")
     private Manager manager;
 }

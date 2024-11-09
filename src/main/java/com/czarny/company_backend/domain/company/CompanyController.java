@@ -2,10 +2,12 @@ package com.czarny.company_backend.domain.company;
 
 import static org.springframework.http.ResponseEntity.ok;
 import static org.springframework.http.ResponseEntity.status;
+import static org.springframework.http.ResponseEntity.noContent;
 
 import com.czarny.company_backend.domain.common.ItemNotFoundException;
 import com.czarny.company_backend.domain.company.model.Company;
 import com.czarny.company_backend.domain.company.model.Department;
+import com.czarny.company_backend.domain.company.model.Team;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -40,7 +42,7 @@ public class CompanyController {
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteCompany(@PathVariable Long id) throws ItemNotFoundException {
         companyService.deleteCompany(id);
-        return status(HttpStatus.NO_CONTENT).build();
+        return noContent().build();
     }
 
     @PutMapping("/{id}")
@@ -50,7 +52,7 @@ public class CompanyController {
     ) throws ItemNotFoundException
     {
         Company updatedCompany = companyService.updateCompany(id, company);
-        return status(HttpStatus.OK).body(updatedCompany);
+        return ok().body(updatedCompany);
     }
 
     @GetMapping("/{companyId}/departments")
@@ -74,8 +76,8 @@ public class CompanyController {
         @RequestBody Department department
     ) throws ItemNotFoundException
     {
-        Department createdDepartment = companyService.createDepartmentInCompany(department, companyId);
-        return status(HttpStatus.CREATED).body(createdDepartment);
+        Department newDepartment = companyService.createDepartmentInCompany(department, companyId);
+        return status(HttpStatus.CREATED).body(newDepartment);
     }
 
     @DeleteMapping("/{companyId}/departments/{departmentId}")
@@ -84,7 +86,7 @@ public class CompanyController {
         @PathVariable Long departmentId
     ) throws ItemNotFoundException {
         companyService.deleteDepartmentFromCompany(departmentId, companyId);
-        return status(HttpStatus.NO_CONTENT).build();
+        return noContent().build();
     }
 
     @PutMapping("/{companyId}/departments/{departmentId}")
@@ -94,6 +96,54 @@ public class CompanyController {
         @RequestBody Department department
     ) throws ItemNotFoundException {
         Department updatedDepartment = companyService.updateDepartmentInCompany(departmentId, companyId, department);
-        return status(HttpStatus.OK).body(updatedDepartment);
+        return ok(updatedDepartment);
+    }
+
+    @GetMapping("/{companyId}/departments/{departmentId}/team")
+    public ResponseEntity<List<Team>> getAllTeamsFromCompanyDepartment(
+        @PathVariable Long companyId,
+        @PathVariable Long departmentId
+    ) throws ItemNotFoundException {
+        return ok(companyService.getTeamsFromCompanyDepartment(companyId, departmentId));
+    }
+
+    @GetMapping("/{companyId}/departments/{departmentId}/team/{teamId}")
+    public ResponseEntity<Team> getTeamFromCompanyDepartment(
+        @PathVariable Long companyId,
+        @PathVariable Long departmentId,
+        @PathVariable Long teamId
+    ) throws ItemNotFoundException {
+        return ok(companyService.getTeamFromCompanyDepartment(companyId, departmentId, teamId));
+    }
+
+    @PostMapping("/{companyId}/departments/{departmentId}/team")
+    public ResponseEntity<Team> createTeamInCompanyDepartment(
+        @PathVariable Long companyId,
+        @PathVariable Long departmentId,
+        @RequestBody Team team
+    ) throws ItemNotFoundException {
+        Team newTeam = companyService.createTeamForCompanyDepartment(companyId, departmentId, team);
+        return status(HttpStatus.CREATED).body(newTeam);
+    }
+
+    @PutMapping("/{companyId}/departments/{departmentId}/team/{teamId}")
+    public ResponseEntity<Team> updateTeamInCompanyDepartment(
+        @PathVariable Long companyId,
+        @PathVariable Long departmentId,
+        @PathVariable Long teamId,
+        @RequestBody Team team
+    ) throws ItemNotFoundException {
+        Team updatedTeam = companyService.updateTeamInCompanyDepartment(companyId, departmentId, teamId, team);
+        return ok(updatedTeam);
+    }
+
+    @DeleteMapping("/{companyId}/departments/{departmentId}/team/{teamId}")
+    public ResponseEntity<Void> deleteTeamFromCompanyDepartment(
+        @PathVariable Long companyId,
+        @PathVariable Long departmentId,
+        @PathVariable Long teamId
+    ) throws ItemNotFoundException {
+        companyService.deleteTeamForCompanyDepartment(companyId, departmentId, teamId);
+        return noContent().build();
     }
 }
