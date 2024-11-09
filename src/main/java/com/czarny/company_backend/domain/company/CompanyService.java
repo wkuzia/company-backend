@@ -3,10 +3,7 @@ package com.czarny.company_backend.domain.company;
 import static java.lang.String.format;
 
 import com.czarny.company_backend.domain.common.ItemNotFoundException;
-import com.czarny.company_backend.domain.company.model.Company;
-import com.czarny.company_backend.domain.company.model.Department;
-import com.czarny.company_backend.domain.company.model.Project;
-import com.czarny.company_backend.domain.company.model.Team;
+import com.czarny.company_backend.domain.company.model.*;
 import com.czarny.company_backend.domain.company.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -133,13 +130,11 @@ public class CompanyService {
     ) throws ItemNotFoundException {
         checkCompanyExists(companyId);
         checkDepartmentExistsInCompany(companyId, departmentId);
-        Team teamFound = teamRepository.findByDepartment_IdAndId(departmentId, teamId).orElseThrow(
+        return teamRepository.findByDepartment_IdAndId(departmentId, teamId).orElseThrow(
             () -> new ItemNotFoundException(
                 format("Team with id %d in Department with id %d not found", teamId, departmentId)
             )
         );
-
-        return teamFound;
     }
 
     @Transactional
@@ -270,6 +265,93 @@ public class CompanyService {
         );
 
         projectRepository.delete(project);
+    }
+
+    @Transactional
+    public Manager createManagerForProjectForTeamFromCompanyDepartment(
+        Long companyId,
+        Long departmentId,
+        Long teamId,
+        Long projectId,
+        Manager manager
+    ) throws ItemNotFoundException {
+        checkCompanyExists(companyId);
+        checkDepartmentExistsInCompany(companyId, departmentId);
+        checkTeamExistsInDepartment(departmentId, teamId);
+
+        Project existingProject = projectRepository.findByIdAndTeam_Id(projectId, teamId).orElseThrow(
+            () -> new ItemNotFoundException(
+                format("Project with id: %d from Team with id: %d not found", projectId, teamId)
+            )
+        );
+
+        manager.setProject(existingProject);
+        Manager newManager = managerRepository.save(manager);
+        existingProject.setManager(newManager);
+        projectRepository.save(existingProject);
+
+        return newManager;
+    }
+
+    @Transactional(readOnly = true)
+    public Manager getManagerFromProjectForTeamFromCompanyDepartment(
+        Long companyId,
+        Long departmentId,
+        Long teamId,
+        Long projectId
+    ) throws ItemNotFoundException {
+        checkFullExistence(companyId, departmentId, teamId, projectId);
+
+        return managerRepository.findByProject_Id(projectId).orElseThrow(
+            () -> new ItemNotFoundException(format("Manager id project with id: %d not set", projectId))
+        );
+    }
+
+    @Transactional
+    public void removeManagerFromProjectForTeamFromCompanyDepartment (
+        Long companyId,
+        Long departmentId,
+        Long teamId,
+        Long projectId
+    ) throws ItemNotFoundException {
+        checkFullExistence(companyId, departmentId, teamId, projectId);
+
+        Manager manager = managerRepository.findByProject_Id(projectId).orElseThrow(
+                () -> new ItemNotFoundException(format("Manager id project with id: %d not set", projectId))
+        );
+
+        Project project = manager.getProject();
+        project.setManager(null);
+        projectRepository.save(project);
+
+        managerRepository.delete(manager);
+    }
+
+    @Transactional
+    public Manager updateMangerInProjectForTeamFromCompanyDepartment (
+        Long companyId,
+        Long departmentId,
+        Long teamId,
+        Long projectId,
+        Manager manager
+    ) throws ItemNotFoundException {
+        checkFullExistence(companyId, departmentId, teamId, projectId);
+        Manager existingManager = managerRepository.findByProject_Id(projectId).orElseThrow(
+            () -> new ItemNotFoundException(format("Manager id project with id: %d not set", projectId))
+        );
+
+        manager.setId(existingManager.getId());
+        manager.setProject(existingManager.getProject());
+
+        return managerRepository.save(manager);
+    }
+
+    private void checkFullExistence(Long companyId, Long departmentId, Long teamId, Long projectId)
+            throws ItemNotFoundException {
+        checkCompanyExists(companyId);
+        checkDepartmentExistsInCompany(companyId, departmentId);
+        checkTeamExistsInDepartment(departmentId, teamId);
+        checkProjectExistsInTeam(teamId, projectId);
     }
 
     private void checkCompanyExists(Long companyId) throws ItemNotFoundException {

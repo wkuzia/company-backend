@@ -1,6 +1,7 @@
 package com.czarny.company_backend.domain.company.model;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -25,7 +26,8 @@ public class Project {
     @JsonBackReference
     private Team team;
 
-    @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "manager_id")
+    @OneToOne()
+    @JoinColumn(name = "manager_id", referencedColumnName = "id")
+    @JsonManagedReference
     private Manager manager;
 }
