@@ -1,6 +1,7 @@
 package com.czarny.company_backend.domain.common;
 
 import static org.springframework.http.HttpStatus.NOT_FOUND;
+import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -22,4 +23,8 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(response, NOT_FOUND);
     }
 
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<String> handleGeneralException(Exception ex) {
+        return new ResponseEntity<>("An unexpected error occurred: " + ex.getMessage(), INTERNAL_SERVER_ERROR);
+    }
 }
