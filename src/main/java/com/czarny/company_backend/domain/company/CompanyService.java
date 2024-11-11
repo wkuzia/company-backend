@@ -161,9 +161,15 @@ public class CompanyService {
     ) throws ItemNotFoundException {
         checkCompanyExists(companyId);
         checkDepartmentExistsInCompany(companyId, departmentId);
-        checkTeamExistsInDepartment(departmentId, teamId);
+
+        Department department = departmentRepository.findByIdAndCompanyId(departmentId, companyId).orElseThrow(
+            () -> new ItemNotFoundException(
+                format("Department with id: %d for company with id: %d not found", departmentId, companyId)
+            )
+        );
 
         team.setId(teamId);
+        team.setDepartment(department);
         return teamRepository.save(team);
     }
 
@@ -241,9 +247,14 @@ public class CompanyService {
     ) throws ItemNotFoundException {
         checkCompanyExists(companyId);
         checkDepartmentExistsInCompany(companyId, departmentId);
-        checkTeamExistsInDepartment(departmentId, teamId);
-        checkProjectExistsInTeam(teamId, projectId);
 
+        Team team = teamRepository.findByDepartment_IdAndId(departmentId, teamId).orElseThrow(
+            () -> new ItemNotFoundException(
+                    format("Project with id: %d from Team with id: %d not found", projectId, teamId)
+            )
+        );
+
+        project.setTeam(team);
         project.setId(projectId);
         return projectRepository.save(project);
     }
