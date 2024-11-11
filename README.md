@@ -8,3 +8,13 @@ w katalogu z projektem należy uruchomić:
 ```bash
 mvn clean package -DskipTests
 docker compose up --build
+```
+
+## Testy
+
+Przygotowałem testy serwisu. Do testów wykorzystałem testcontainer z postgresql, dzięki czemu nie musiałem używać mocków
+
+Uruchamianie:
+```bash
+mvn test 
+```
